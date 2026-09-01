@@ -1,15 +1,17 @@
 require("@nomicfoundation/hardhat-toolbox");
 
+const bitfinityPrivateKey = process.env.BITFINITY_PRIVATE_KEY;
+
 module.exports = {
   defaultNetwork: 'localhost',
   networks: {
     hardhat: {},
     localhost: {
-      url: 'http://127.0.0.1:8545',
+      url: process.env.LOCAL_RPC_URL || 'http://127.0.0.1:8545',
     },
     bitfinity: {
-      url: 'https://testnet.bitfinity.network',
-      accounts: ['089b9888552787c24d8f4e4b96c11221884def4c2ae3f296a48ad65c4c9eb64a'],
+      url: process.env.BITFINITY_RPC_URL || 'https://testnet.bitfinity.network',
+      accounts: bitfinityPrivateKey ? [bitfinityPrivateKey] : [],
       chainId: 355113,
       timeout: 120000,
     },
@@ -26,4 +28,4 @@ module.exports = {
   mocha: {
     timeout: 40000,
   },
-}
+};
