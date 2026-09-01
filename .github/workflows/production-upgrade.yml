@@ -5,28 +5,28 @@ on:
     branches: [production/hardening-2026-09-01]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-upgrade:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      NEXT_PUBLIC_APP_VERSION: 1.0.0
-      NEXT_PUBLIC_RPC_URL: http://127.0.0.1:8545
-      NEXT_PUBLIC_ALCHEMY_ID: ci-placeholder
-      NEXT_PUBLIC_PROJECT_ID: ci-placeholder
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ci-only-not-a-production-secret
-      LOCAL_RPC_URL: http://127.0.0.1:8545
-      BITFINITY_RPC_URL: https://testnet.bitfinity.network
+      NEXT_PUBLIC_APP_VERSION: '1.0.0'
+      NEXT_PUBLIC_RPC_URL: 'http://127.0.0.1:8545'
+      NEXT_PUBLIC_ALCHEMY_ID: 'ci-placeholder'
+      NEXT_PUBLIC_PROJECT_ID: 'ci-placeholder'
+      NEXTAUTH_URL: 'http://localhost:3000'
+      NEXTAUTH_SECRET: 'ci-only-not-a-production-secret'
+      LOCAL_RPC_URL: 'http://127.0.0.1:8545'
+      BITFINITY_RPC_URL: 'https://testnet.bitfinity.network'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: yarn
-      - name: Install supported Next.js LTS
+      - name: Resolve supported Next.js LTS
         run: yarn add --exact next@15.5.24 eslint-config-next@15.5.24
       - name: Lint
         run: yarn lint
@@ -36,11 +36,15 @@ jobs:
         run: yarn hardhat compile
       - name: Production build
         run: yarn build
-      - name: Upload resolved manifests
-        uses: actions/upload-artifact@v7
-        with:
-          name: play2earnx-production-manifests
-          path: |
-            package.json
-            yarn.lock
-          retention-days: 2
+      - name: Persist verified manifests
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json yarn.lock; then
+            echo 'Dependency manifests already match the verified production build.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json yarn.lock
+          git commit -m 'prod: pin verified Next.js 15.5.24 manifests'
+          git push origin HEAD:production/hardening-2026-09-01
